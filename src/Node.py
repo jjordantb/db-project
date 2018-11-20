@@ -5,26 +5,35 @@ from XCluster import XCluster
 from YCluster import YCluster
 
 
-def computer_y_clusters(y_vectors, num_clusters, sensitivity):
-    y_clusters = [YCluster(y_vectors[0])]
+def compute_clusters(input_data, num_clusters, sensitivity):
+    y_clusters = [YCluster(input_data[0][1])]
+    x_clusters = [XCluster(input_data[0][0])]
     p = 1
-    for i in range(1, len(y_vectors)):
+    for i in range(1, len(input_data)):
         # Find the nearest y-cluster to vector i
-        vector_i = y_vectors[i]
+        y_vector_i = input_data[i][1]
+        x_vector_i = input_data[i][0]
         dist = sys.maxsize
         closest_cluster = None
+        index = 0
+        i = 0
         for cluster in y_clusters:
-            tmp_dist = np.linalg.norm(np.array(cluster.mean_vector) - np.array(vector_i))
+            tmp_dist = np.linalg.norm(np.array(cluster.mean_vector) - np.array(y_vector_i))
             if tmp_dist < dist:
                 dist = tmp_dist
                 closest_cluster = cluster
+                index = i
+            i += 1
         if p < num_clusters and dist >= sensitivity:
-            new_cluster = YCluster(vector_i)
-            y_clusters.append(new_cluster)
+            new_y_cluster = YCluster(y_vector_i)
+            y_clusters.append(new_y_cluster)
+            new_x_cluster = XCluster(x_vector_i)
+            x_clusters.append(new_x_cluster)
             p += 1
         else:
-            closest_cluster.add_vector(vector_i)
-    return y_clusters
+            closest_cluster.add_vector(y_vector_i)
+            x_clusters[index].add_vector(x_vector_i)
+    return [x_clusters, y_clusters]
 
 
 class Node:
@@ -37,15 +46,14 @@ class Node:
     # s_prime -> set of tuples (x, y)
     def build_tree(self, s_prime, selectivity):
         p = self.num_clusters
-        self.y_clusters = computer_y_clusters([s[1] for s in s_prime], p, selectivity)
-        self.x_clusters = []
-        index = 0
-        for y_cluster in self.y_clusters:
-            for tuple in s_prime:
-                if y_cluster.contains_vector(tuple[1]):
-                    if len(self.x_clusters) <= index:
-                        self.x_clusters.append(XCluster(tuple[0]))
-                    else:
-                        self.x_clusters[index].add_vector(tuple[0])
-            index += 1
-            print(index)
+
+        # Compute the clusters
+        clusters = compute_clusters(s_prime, p, selectivity)
+        self.y_clusters = clusters[1]
+        self.x_clusters = clusters[0]
+
+        # Compute the covariance matricies
+        for i in range(0, len(self.y_clusters)):
+            self.y_clusters[i].compute_cov()
+            self.x_clusters[i].compute_cov()
+
