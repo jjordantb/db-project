@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+from scipy.linalg import orth
 
 from XCluster import XCluster
 from YCluster import YCluster
@@ -56,4 +57,28 @@ class Node:
         for i in range(0, len(self.y_clusters)):
             self.y_clusters[i].compute_cov()
             self.x_clusters[i].compute_cov()
+
+    def get_x_centers(self):
+        vects = []
+        for x_cluster in self.x_clusters:
+            vects.append(x_cluster.mean_vector)
+        return vects
+
+    def linear_manifold(self, x):
+        vectors = np.array(self.get_x_centers()).transpose()
+        center = np.mean(vectors, axis=1)
+        scatter_vectors = []
+        for v in vectors.T:
+            scatter_vectors.append(np.array(v) - np.array(center))
+        manifold = np.array(vectors) + np.array(scatter_vectors).transpose()
+        orthog = orth(manifold)
+        scatter_part = center - np.array(x)
+        feature_vector = []
+        for a in orthog.T:
+            feature_vector.append(scatter_part.transpose() * a)
+        return np.array(feature_vector).transpose()
+
+    def coordinate_vector(self):
+        centers = np.array(self.get_x_centers()).transpose()
+        print(centers.shape)
 

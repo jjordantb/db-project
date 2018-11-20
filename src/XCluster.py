@@ -17,3 +17,4 @@ class XCluster:
 
     def compute_cov(self):
         self.cov_matrix = np.cov(self.vectors, rowvar=False)
+
