@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import sys
 from scipy.linalg import orth
@@ -6,8 +8,6 @@ from scipy import stats
 
 from XCluster import XCluster
 from YCluster import YCluster
-
-from multiprocessing.pool import ThreadPool
 
 
 def compute_clusters(input_data, num_clusters, sensitivity):
@@ -43,10 +43,11 @@ def compute_clusters(input_data, num_clusters, sensitivity):
 
 class Node:
 
-    def __init__(self, num_clusters):
+    def __init__(self, num_clusters, num_classes):
         self.x_clusters = None  # init set of x_clusters
         self.y_clusters = None  # init set of y_clusters
-        self.num_clusters = num_clusters  # number of classes / labels
+        self.num_clusters = num_clusters
+        self.num_classes = num_classes
 
     # s_prime -> set of tuples (x, y)
     def build_tree(self, s_prime, selectivity):
@@ -64,15 +65,23 @@ class Node:
             self.y_clusters[i].compute_cov()
             self.x_clusters[i].compute_cov()
 
-        print('Finding Children for', self)
-        for x_cluster in self.x_clusters:
-            print('O(n^2)LOL Checking', x_cluster, 'in', self)
-            if x_cluster.should_split(selectivity):
-                new_node = Node(self.num_clusters)
-                x_cluster.child_nodes.append(new_node)
-                cluster_data = x_cluster.get_data()
-                print('Cluster data of', len(cluster_data))
-                new_node.build_tree(cluster_data, selectivity)
+        if self.num_clusters != self.num_classes:
+            print('Finding Children for', self)
+            for x_cluster in self.x_clusters:
+                print('O(n^2)LOL Checking', x_cluster, 'in', self)
+                start_time = int(round(time.time() * 1000))
+                should_split = x_cluster.should_split(selectivity)
+                elapsed = int(round(time.time() * 1000)) - start_time
+                print('Split Check took', elapsed, 'ms')
+                if should_split:
+                    new_node = Node(self.num_clusters, self.num_classes)
+                    x_cluster.child_nodes.append(new_node)
+                    cluster_data = x_cluster.get_data()
+                    print('Cluster data of', len(cluster_data))
+                    new_node.build_tree(cluster_data, selectivity)
+        else:
+            print('Number of Classes == Number of Nodes therefore our tree will have depth 1 and no extra computation '
+                  'is needed')
 
     def get_x_centers(self):
         vects = []

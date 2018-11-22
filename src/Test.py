@@ -31,12 +31,12 @@ for i in range(0, 10):
         data.append((img, vect))
 
 
-def test(n, x_in, dist=sys.maxsize):
+def test(n, x_in):
     closest_cluster_pair = n.get_closest_cluster_pair(x_in)
     dist = closest_cluster_pair[0]
     if len(closest_cluster_pair[1].child_nodes) > 0:
         for child in closest_cluster_pair[1].child_nodes:
-            return test(child, x_in, dist)
+            return test(child, x_in)
     return closest_cluster_pair
     # distance = sys.maxsize
     # index = 0
@@ -56,8 +56,8 @@ def test(n, x_in, dist=sys.maxsize):
     # return [distance, node.y_clusters[index].mean_vector]
 
 
-node = Node(3)
-node.build_tree(data, 2)
+node = Node(10, 10)
+node.build_tree(data, 1)
 # print(node.coordinate_vector(0).shape)
 # print(node.linear_manifold(data[0][0]).shape)
 for i in range(0, 10):
