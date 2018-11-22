@@ -65,20 +65,6 @@ class Node:
             vects.append(x_cluster.mean_vector)
         return vects
 
-    def linear_manifold(self, x):
-        vectors = np.array(self.get_x_centers()).transpose()
-        center = np.mean(vectors, axis=1)
-        scatter_vectors = []
-        for v in vectors.T:
-            scatter_vectors.append(np.array(v) - np.array(center))
-        manifold = np.array(vectors) + np.array(scatter_vectors).transpose()
-        orthog = orth(manifold)
-        scatter_part = center - np.array(x)
-        feature_vector = []
-        for a in orthog.T:
-            feature_vector.append(scatter_part.transpose() * a)
-        return np.array(feature_vector).transpose()
-
     def coordinate_vector(self, cluster_index):
         centers = np.array(self.get_x_centers()).transpose()
         m = orth(centers)
