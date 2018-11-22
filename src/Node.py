@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 from scipy.linalg import orth
+from scipy.spatial import distance
 
 from XCluster import XCluster
 from YCluster import YCluster
@@ -19,7 +20,7 @@ def compute_clusters(input_data, num_clusters, sensitivity):
         index = 0
         i = 0
         for cluster in y_clusters:
-            tmp_dist = np.linalg.norm(np.array(cluster.mean_vector) - np.array(y_vector_i))
+            tmp_dist = distance.euclidean(np.array(cluster.mean_vector), np.array(y_vector_i))
             if tmp_dist < dist:
                 dist = tmp_dist
                 closest_cluster = cluster
@@ -78,7 +79,8 @@ class Node:
             feature_vector.append(scatter_part.transpose() * a)
         return np.array(feature_vector).transpose()
 
-    def coordinate_vector(self):
+    def coordinate_vector(self, cluster_index):
         centers = np.array(self.get_x_centers()).transpose()
-        print(centers.shape)
+        m = orth(centers)
+        return m.transpose() * self.x_clusters[cluster_index].mean_vector
 

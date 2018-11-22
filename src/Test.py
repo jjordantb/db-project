@@ -38,7 +38,7 @@ def test(n, x_in):
     index = 0
     i = 0
     for x_cluster in n.x_clusters:
-        tmp_distance = dist.euclidean(x_cluster.linear_manifold(x_in), x_in)
+        tmp_distance = dist.mahalanobis(n.coordinate_vector(i)[i], x_in, x_cluster.snll(x_in))
         print("Distance ", i, tmp_distance)
         if tmp_distance < distance:
             distance = tmp_distance
@@ -49,6 +49,10 @@ def test(n, x_in):
 
 node = Node(10)
 node.build_tree(data, 1)
-print(node.linear_manifold(data[2][0]).shape)
-# print(test(node, data[2][0]))
+# print(node.coordinate_vector(0).shape)
+# print(node.linear_manifold(data[0][0]).shape)
+val = ImgUtil.load_mnist(0)
+v = val[0]
+print(test(node, v))
+print(v)
 
