@@ -2,6 +2,8 @@ import time
 
 import numpy as np
 import sys
+
+from numpy.linalg import LinAlgError
 from scipy.linalg import orth
 from scipy.spatial import distance
 from scipy import stats
@@ -22,8 +24,8 @@ def compute_clusters(input_data, num_clusters, sensitivity):
         closest_cluster = None
         index = 0
         i = 0
-        for cluster in y_clusters:
-            tmp_dist = distance.euclidean(np.array(cluster.mean_vector), np.array(y_vector_i))
+        for cluster in x_clusters:
+            tmp_dist = distance.euclidean(np.array(cluster.mean_vector), np.array(x_vector_i))
             if tmp_dist < dist:
                 dist = tmp_dist
                 closest_cluster = cluster
@@ -36,8 +38,8 @@ def compute_clusters(input_data, num_clusters, sensitivity):
             x_clusters.append(new_x_cluster)
             p += 1
         else:
-            closest_cluster.add_vector(y_vector_i)
-            x_clusters[index].add_vector(x_vector_i, y_vector_i)
+            closest_cluster.add_vector(x_vector_i, y_vector_i)
+            y_clusters[index].add_vector(y_vector_i)
     return [x_clusters, y_clusters]
 
 
@@ -65,23 +67,19 @@ class Node:
             self.y_clusters[i].compute_cov()
             self.x_clusters[i].compute_cov()
 
-        if self.num_clusters != self.num_classes:
-            print('Finding Children for', self)
-            for x_cluster in self.x_clusters:
-                print('O(n^2)LOL Checking', x_cluster, 'in', self)
-                start_time = int(round(time.time() * 1000))
-                should_split = x_cluster.should_split(selectivity)
-                elapsed = int(round(time.time() * 1000)) - start_time
-                print('Split Check took', elapsed, 'ms')
-                if should_split:
-                    new_node = Node(self.num_clusters, self.num_classes)
-                    x_cluster.child_nodes.append(new_node)
-                    cluster_data = x_cluster.get_data()
-                    print('Cluster data of', len(cluster_data))
-                    new_node.build_tree(cluster_data, selectivity)
-        else:
-            print('Number of Classes == Number of Nodes therefore our tree will have depth 1 and no extra computation '
-                  'is needed')
+        print('Finding Children for', self)
+        for x_cluster in self.x_clusters:
+            print('Checking to split', x_cluster, 'in', self)
+            start_time = int(round(time.time() * 1000))
+            should_split = x_cluster.should_split(1)
+            elapsed = int(round(time.time() * 1000)) - start_time
+            print('Split Check took', elapsed, 'ms')
+            if should_split:
+                new_node = Node(self.num_clusters, self.num_classes)
+                x_cluster.child_nodes.append(new_node)
+                cluster_data = x_cluster.get_data()
+                print('Cluster data of', len(cluster_data))
+                new_node.build_tree(cluster_data, selectivity)
 
     def get_x_centers(self):
         vects = []
@@ -97,7 +95,10 @@ class Node:
     def compute_distances_to(self, x):
         dists = []
         for x_cluster in self.x_clusters:
-            dists.append(-stats.multivariate_normal.logpdf(x, x_cluster.mean_vector, x_cluster.cov_matrix))
+            try:
+                dists.append(-stats.multivariate_normal.logpdf(x, x_cluster.mean_vector, x_cluster.cov_matrix))
+            except LinAlgError as e:
+                dists.append(0)
         return dists
 
     def get_closest_cluster_pair(self, x):
