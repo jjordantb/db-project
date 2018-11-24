@@ -73,7 +73,7 @@ class Node:
             for i, x_cluster in enumerate(self.x_clusters):
                 print('Checking to split', x_cluster, 'in', self)
                 start_time = int(round(time.time() * 1000))
-                should_split = x_cluster.should_split(1)
+                should_split = x_cluster.should_split(0)
                 elapsed = int(round(time.time() * 1000)) - start_time
                 print('Split Check took', elapsed, 'ms')
                 if should_split:
@@ -97,21 +97,17 @@ class Node:
     def compute_distances_to(self, x):
         dists = []
         for i, x_cluster in enumerate(self.x_clusters):
-            dists.append(distance.euclidean(x, x_cluster.mean_vector))
-            # dists.append(-stats.multivariate_normal.logpdf(x, x_cluster.mean_vector, x_cluster.cov_matrix, allow_singular=True))
+            dists.append(-distance.euclidean(x, x_cluster.mean_vector))
         return dists
 
     def get_closest_cluster_pair(self, x):
         raw = self.compute_distances_to(x)
         distances = np.array(raw)
-        num = distances.size
-        # num = min(distances.size, 3 * self.depth)
+        # num = distances.size
+        num = min(distances.size, 1 * self.depth)
         mins = np.argpartition(distances, -num)[-num:]
         ret = []
-        # print(mins, distances)
         for m in mins:
             index = raw.index(distances[m])
-            # print('idx', index)
             ret.append([distances[m], self.x_clusters[index], self.y_clusters[index]])
-        # print('Return', ret)
         return ret

@@ -49,27 +49,45 @@ def traverse_tree(n, x_in, terminals):
                 terminals.append(c)
 
 
-print('Training', len(training))
+print('Training on', len(training), 'samples')
 node = Node(nodes, 10, 1)
-node.build_tree(training, 500)
+node.build_tree(training, 1500)
 print('Testing', len(testing))
 correct = 0
-for test in testing:
-    print("START ----------------- ")
-    start_time = int(round(time.time() * 1000))
-    results = []
-    traverse_tree(node, test[0], results)
-    closest = None
-    for result in results:
-        dist = distance.euclidean(np.array(result[1].mean_vector), test[0])
-        # print('DISTANCE', dist, '->', result[2].mean_vector)
-        if closest is None or closest[0] > dist:
-            result[0] = dist
-            closest = result
-    print(closest[0], closest[2].mean_vector)
-    elapsed = int(round(time.time() * 1000)) - start_time
-    print('Time', elapsed)
-    print("STOP ------------------ ")
+
+test = testing[5]
+print("START ----------------- ")
+start_time = int(round(time.time() * 1000))
+results = []
+traverse_tree(node, test[0], results)
+closest = None
+for result in results:
+    dist = distance.euclidean(np.array(result[1].mean_vector), test[0])
+    # print('DISTANCE', dist, '->', result[2].mean_vector)
+    if closest is None or closest[0] > dist:
+        result[0] = dist
+        closest = result
+print(closest[0], closest[2].mean_vector)
+elapsed = int(round(time.time() * 1000)) - start_time
+print('Time', elapsed)
+print("STOP ------------------ ")
+
+# for test in testing:
+    # print("START ----------------- ")
+    # start_time = int(round(time.time() * 1000))
+    # results = []
+    # traverse_tree(node, test[0], results)
+    # closest = None
+    # for result in results:
+    #     dist = distance.euclidean(np.array(result[1].mean_vector), test[0])
+    #     # print('DISTANCE', dist, '->', result[2].mean_vector)
+    #     if closest is None or closest[0] > dist:
+    #         result[0] = dist
+    #         closest = result
+    # print(closest[0], closest[2].mean_vector)
+    # elapsed = int(round(time.time() * 1000)) - start_time
+    # print('Time', elapsed)
+    # print("STOP ------------------ ")
     # elapsed = int(round(time.time() * 1000)) - start_time
     # test_i = test[1].index(1)
     # pred_i = pred.index(max(pred))
