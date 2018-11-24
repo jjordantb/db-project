@@ -67,19 +67,20 @@ class Node:
             self.y_clusters[i].compute_cov()
             self.x_clusters[i].compute_cov()
 
-        print('Finding Children for', self)
-        for x_cluster in self.x_clusters:
-            print('Checking to split', x_cluster, 'in', self)
-            start_time = int(round(time.time() * 1000))
-            should_split = x_cluster.should_split(1)
-            elapsed = int(round(time.time() * 1000)) - start_time
-            print('Split Check took', elapsed, 'ms')
-            if should_split:
-                new_node = Node(self.num_clusters, self.num_classes)
-                x_cluster.child_nodes.append(new_node)
-                cluster_data = x_cluster.get_data()
-                print('Cluster data of', len(cluster_data))
-                new_node.build_tree(cluster_data, selectivity)
+        if len(self.x_clusters) > 1:
+            print('Finding Children for', self)
+            for x_cluster in self.x_clusters:
+                print('Checking to split', x_cluster, 'in', self)
+                start_time = int(round(time.time() * 1000))
+                should_split = x_cluster.should_split(1)
+                elapsed = int(round(time.time() * 1000)) - start_time
+                print('Split Check took', elapsed, 'ms')
+                if should_split:
+                    new_node = Node(self.num_clusters, self.num_classes)
+                    x_cluster.child_nodes.append(new_node)
+                    cluster_data = x_cluster.get_data()
+                    print('Cluster data of', len(cluster_data))
+                    new_node.build_tree(cluster_data, selectivity)
 
     def get_x_centers(self):
         vects = []
@@ -94,11 +95,8 @@ class Node:
 
     def compute_distances_to(self, x):
         dists = []
-        for x_cluster in self.x_clusters:
-            try:
-                dists.append(-stats.multivariate_normal.logpdf(x, x_cluster.mean_vector, x_cluster.cov_matrix))
-            except LinAlgError as e:
-                dists.append(0)
+        for i, x_cluster in enumerate(self.x_clusters):
+            dists.append(-stats.multivariate_normal.logpdf(x, x_cluster.mean_vector, x_cluster.cov_matrix, allow_singular=True))
         return dists
 
     def get_closest_cluster_pair(self, x):

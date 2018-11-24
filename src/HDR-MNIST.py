@@ -4,7 +4,8 @@ import time
 import numpy as np
 
 # Parameters Start
-training_split_percent = 0.8
+training_split_percent = 0.99
+nodes = 10
 # Parameters End
 
 training = []  # tuple of (image data vector, 1-hot-vector)
@@ -24,24 +25,30 @@ for i in range(0, 10):
 def traverse_tree(n, x_in, cur):
     closest_cluster_pair = n.get_closest_cluster_pair(x_in)
     if cur is None or cur[0] > closest_cluster_pair[0]:
+        if cur is not None:
+            print('Distance', cur[0], closest_cluster_pair[0])
         cur = closest_cluster_pair
     if len(closest_cluster_pair[1].child_nodes) > 0:
         for child in closest_cluster_pair[1].child_nodes:
-            return traverse_tree(child, x_in, cur)
-    return closest_cluster_pair
+            traverse_tree(child, x_in, cur)
+    return cur
 
 
 print('Training', len(training))
-node = Node(10, 10)
+node = Node(nodes, 10)
 node.build_tree(training, 1850)
 print('Testing', len(testing))
 correct = 0
 for test in testing:
     start_time = int(round(time.time() * 1000))
-    pred = traverse_tree(node, test[0], None)[2].mean_vector
+    pred = traverse_tree(node, test[0], None)[2].mean_vector.tolist()
     elapsed = int(round(time.time() * 1000)) - start_time
+    test_i = test[1].index(1)
+    pred_i = pred.index(max(pred))
+    print('Actual ' + str(test_i) + ' Prediction ' + str(pred_i), 'in', elapsed, 'ms')
     print('Actual ' + str(test[1]) + ' Prediction ' + str(pred), 'in', elapsed, 'ms')
-    if np.array_equal(np.array(test[1]), np.array(pred)):
+    if test_i == pred_i:
         correct += 1
+    print('Current Accuracy', correct / len(testing), '(', int((correct / len(testing)) * 100), '%)')
 
 print('Total Accuracy', correct / len(testing), '(', int((correct / len(testing)) * 100), '%)')

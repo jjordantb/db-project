@@ -28,7 +28,6 @@ class XCluster:
         for y_vector_1 in self.y_vectors:
             for y_vector_2 in self.y_vectors:
                 euclid_distance = distance.euclidean(y_vector_1, y_vector_2)
-                print(euclid_distance)
                 if euclid_distance > selectivity:
                     return True
         return False
