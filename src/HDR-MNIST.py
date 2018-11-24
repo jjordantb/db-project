@@ -16,7 +16,7 @@ for i in range(0, 10):
     vect[i] = 1
     size = len(imgs)
     for i, img in enumerate(imgs):
-        if i > size * training_split_percent:
+        if i >= size * training_split_percent:
             testing.append((img, vect))
         else:
             training.append((img, vect))
