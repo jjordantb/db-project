@@ -23,8 +23,7 @@ def compute_clusters(input_data, num_clusters, sensitivity):
         dist = sys.maxsize
         closest_cluster = None
         index = 0
-        i = 0
-        for cluster in x_clusters:
+        for i, cluster in enumerate(x_clusters):
             tmp_dist = distance.euclidean(np.array(cluster.mean_vector), np.array(x_vector_i))
             if tmp_dist < dist:
                 dist = tmp_dist
@@ -45,11 +44,13 @@ def compute_clusters(input_data, num_clusters, sensitivity):
 
 class Node:
 
-    def __init__(self, num_clusters, num_classes):
+    def __init__(self, num_clusters, num_classes, depth):
         self.x_clusters = None  # init set of x_clusters
         self.y_clusters = None  # init set of y_clusters
         self.num_clusters = num_clusters
         self.num_classes = num_classes
+        self.depth = depth
+        print('At Tree Depth', self.depth)
 
     # s_prime -> set of tuples (x, y)
     def build_tree(self, s_prime, selectivity):
@@ -60,23 +61,23 @@ class Node:
         clusters = compute_clusters(s_prime, p, selectivity)
         self.y_clusters = clusters[1]
         self.x_clusters = clusters[0]
+        print('Computed', len(self.x_clusters), 'Clusters')
 
         # Compute the covariance matricies
         print('Computing Matrices for', self)
         for i in range(0, len(self.y_clusters)):
-            self.y_clusters[i].compute_cov()
             self.x_clusters[i].compute_cov()
 
         if len(self.x_clusters) > 1:
             print('Finding Children for', self)
-            for x_cluster in self.x_clusters:
+            for i, x_cluster in enumerate(self.x_clusters):
                 print('Checking to split', x_cluster, 'in', self)
                 start_time = int(round(time.time() * 1000))
                 should_split = x_cluster.should_split(1)
                 elapsed = int(round(time.time() * 1000)) - start_time
                 print('Split Check took', elapsed, 'ms')
                 if should_split:
-                    new_node = Node(self.num_clusters, self.num_classes)
+                    new_node = Node(self.num_clusters, self.num_classes, self.depth + 1)
                     x_cluster.child_nodes.append(new_node)
                     cluster_data = x_cluster.get_data()
                     print('Cluster data of', len(cluster_data))
@@ -96,11 +97,20 @@ class Node:
     def compute_distances_to(self, x):
         dists = []
         for i, x_cluster in enumerate(self.x_clusters):
-            dists.append(-stats.multivariate_normal.logpdf(x, x_cluster.mean_vector, x_cluster.cov_matrix, allow_singular=True))
+            dists.append(distance.euclidean(x, x_cluster.mean_vector))
+            # dists.append(-stats.multivariate_normal.logpdf(x, x_cluster.mean_vector, x_cluster.cov_matrix, allow_singular=True))
         return dists
 
     def get_closest_cluster_pair(self, x):
-        distances = self.compute_distances_to(x)
-        m = min(float(s) for s in distances)
-        index = distances.index(m)
-        return [m, self.x_clusters[index], self.y_clusters[index]]
+        raw = self.compute_distances_to(x)
+        distances = np.array(raw)
+        num = min(distances.size, 3 * int(self.depth / 2))
+        mins = np.argpartition(distances, -num)[-num:]
+        ret = []
+        # print(mins, distances)
+        for m in mins:
+            index = raw.index(distances[m])
+            # print('idx', index)
+            ret.append([distances[m], self.x_clusters[index], self.y_clusters[index]])
+        # print('Return', ret)
+        return ret
