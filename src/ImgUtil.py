@@ -1,6 +1,8 @@
 import os
 
 from array import array
+import numpy as np
+import scipy.misc as smp
 
 
 # reads a mnist file
@@ -16,3 +18,9 @@ def load_mnist(num):
             tmp.append(file_bytes_as_ints[i + j])
         imgs.append(tmp)
     return imgs
+
+
+def draw_image(pixel_array, width, height):
+    pixel_array = np.array(pixel_array).reshape(width, height)
+    img = smp.toimage(pixel_array, mode='L')
+    img.show()
