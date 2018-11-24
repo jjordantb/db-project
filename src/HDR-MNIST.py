@@ -62,11 +62,13 @@ for test in testing:
     closest = None
     for result in results:
         dist = distance.euclidean(np.array(result[1].mean_vector), test[0])
-        print('DISTANCE', dist, '->', result[2].mean_vector)
+        # print('DISTANCE', dist, '->', result[2].mean_vector)
         if closest is None or closest[0] > dist:
             result[0] = dist
             closest = result
     print(closest[0], closest[2].mean_vector)
+    elapsed = int(round(time.time() * 1000)) - start_time
+    print('Time', elapsed)
     print("STOP ------------------ ")
     # elapsed = int(round(time.time() * 1000)) - start_time
     # test_i = test[1].index(1)

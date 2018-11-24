@@ -104,7 +104,8 @@ class Node:
     def get_closest_cluster_pair(self, x):
         raw = self.compute_distances_to(x)
         distances = np.array(raw)
-        num = min(distances.size, 3 * int(self.depth / 2))
+        num = distances.size
+        # num = min(distances.size, 3 * self.depth)
         mins = np.argpartition(distances, -num)[-num:]
         ret = []
         # print(mins, distances)
