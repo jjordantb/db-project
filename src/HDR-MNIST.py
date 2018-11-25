@@ -91,7 +91,27 @@ end_training = current_time_ms()
 print('Training took', end_training - start_training, 'ms')
 
 if 'test' not in sys.argv:
-    pass
+    while True:
+        print('What MNIST image would you like to make inference on: ')
+        idx = input()
+        print('Grabbing random image ' + idx + ' from ImageStore')
+        test = image_stores[int(idx)].fetch_random_raw_image()
+        start_time = int(round(time.time() * 1000))
+        results = []
+        traverse_tree(node, test[0], results)
+        closest = None
+        for result in results:
+            dist = distance.euclidean(np.array(result[1].mean_vector), test[0])
+            # print('DISTANCE', dist, '->', result[2].mean_vector)
+            if closest is None or closest[0] > dist:
+                result[0] = dist
+                closest = result
+
+        elapsed = int(round(time.time() * 1000)) - start_time
+        pred = closest[2].mean_vector
+        pred_i = pred.index(max(pred)) if isinstance(pred, list) else pred.tolist().index(max(pred))
+        print('The predicted label was', pred_i, 'Here is a random image that is also a', pred_i)
+        ImgUtil.draw_image(image_stores[int(idx)].fetch_random_raw_image(), 28, 28)
 else:
     print('Testing', len(testing), 'data points')
     correct = 0
