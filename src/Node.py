@@ -100,11 +100,11 @@ class Node:
             dists.append(-distance.euclidean(x, x_cluster.mean_vector))
         return dists
 
-    def get_closest_cluster_pair(self, x):
+    def get_closest_cluster_pair(self, x, k):
         raw = self.compute_distances_to(x)
         distances = np.array(raw)
         # num = distances.size
-        num = min(distances.size, 1 * self.depth)
+        num = min(distances.size, k * self.depth)
         mins = np.argpartition(distances, -num)[-num:]
         ret = []
         for m in mins:

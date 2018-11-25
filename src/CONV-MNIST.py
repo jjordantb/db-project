@@ -13,6 +13,13 @@ import random
 
 sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
 
+# Parameters Start
+training_test_split = 0.95
+batch_size = 32
+num_classes = 10
+epochs = 10
+# Parameters End
+
 
 class MnistStore(ImageStore):
 
@@ -25,8 +32,8 @@ class MnistStore(ImageStore):
         self.y_test = []
         vect = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         vect[idx] = 1
-        size = len(imgs)
-        for i, img in enumerate(imgs):
+        size = len(self.images)
+        for i, img in enumerate(self.images):
             if i >= size * split:
                 self.x_test.append(np.reshape(np.array([x / 255 for x in img]), (28, 28, 1)))  # normalize
                 self.y_test.append(np.array(vect))
@@ -44,16 +51,8 @@ class MnistStore(ImageStore):
 
 image_stores = []
 
-# Parameters Start
-training_test_split = 0.90
-batch_size = 32
-num_classes = 10
-epochs = 10
-# Parameters End
-
 # Init our training data
 for i in range(0, 10):
-    imgs = ImgUtil.load_mnist(i)
     image_stores.append(MnistStore(i, training_test_split))
 
 x_train = []

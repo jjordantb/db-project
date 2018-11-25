@@ -1,45 +1,79 @@
+import random
+
 import ImgUtil
+from ImageStore import ImageStore
 from Node import Node
 import time
+import sys
 import numpy as np
 from scipy.spatial import distance
 
 # Parameters Start
-training_split_percent = 0.999
+training_test_split = 0.95
 nodes = 50
+selectivity = 900
+k = 3
 # Parameters End
 
+
+class MnistStore(ImageStore):
+
+    def __init__(self, idx, split):
+        super().__init__(None)
+        self.images = ImgUtil.load_mnist(idx)
+        self.x_train = []
+        self.y_train = []
+        self.x_test = []
+        self.y_test = []
+        vect = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        vect[idx] = 1
+        size = len(self.images)
+        for i, img in enumerate(self.images):
+            if i >= size * split:
+                self.x_test.append(img)
+                self.y_test.append(vect)
+            else:
+                self.x_train.append(img)
+                self.y_train.append(vect)
+
+    def fetch_random_image(self):
+        rand_image = self.images[random.randrange(0, len(self.images))]
+        return rand_image
+
+    def fetch_random_raw_image(self):
+        return self.images[random.randrange(0, len(self.images))]
+
+
+image_stores = []
 training = []  # tuple of (image data vector, 1-hot-vector)
 testing = []
+# Init our training data
 for i in range(0, 10):
-    imgs = ImgUtil.load_mnist(i)
-    vect = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    vect[i] = 1
-    size = len(imgs)
-    for i, img in enumerate(imgs):
-        if i >= size * training_split_percent:
-            testing.append((img, vect))
-        else:
-            training.append((img, vect))
+    store = MnistStore(i, training_test_split)
+    for j, x in enumerate(store.x_train):
+        training.append((x, store.y_train[j]))
+    for j, x in enumerate(store.x_test):
+        testing.append((x, store.y_test[j]))
+    image_stores.append(store)
 
-
-# def print_terminal(n):
-#     for i, x_cluster in enumerate(n.x_clusters):
-#         if len(x_cluster.child_nodes) > 0:
-#             for child in x_cluster.child_nodes:
-#                 print_terminal(child)
+# for i in range(0, 10):
+#     imgs = ImgUtil.load_mnist(i)
+#     vect = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+#     vect[i] = 1
+#     size = len(imgs)
+#     for i, img in enumerate(imgs):
+#         if i >= size * training_test_split:
+#             testing.append((img, vect))
 #         else:
-#             print(n.y_clusters[i].mean_vector)
-#
-#
-# print('Training', len(training))
-# node = Node(nodes, 10, 1)
-# node.build_tree(training, 100)
-# print_terminal(node)
+#             training.append((img, vect))
+
+
+def current_time_ms():
+    return int(round(time.time() * 1000))
 
 
 def traverse_tree(n, x_in, terminals):
-    closest_cluster_pair = n.get_closest_cluster_pair(x_in)
+    closest_cluster_pair = n.get_closest_cluster_pair(x_in, k)
     if len(closest_cluster_pair) > 0:
         for c in closest_cluster_pair:
             if len(c[1].child_nodes) > 0:
@@ -49,52 +83,41 @@ def traverse_tree(n, x_in, terminals):
                 terminals.append(c)
 
 
+start_training = current_time_ms()
 print('Training on', len(training), 'samples')
 node = Node(nodes, 10, 1)
-node.build_tree(training, 1500)
-print('Testing', len(testing))
-correct = 0
+node.build_tree(training, selectivity)
+end_training = current_time_ms()
+print('Training took', end_training - start_training, 'ms')
 
-test = testing[5]
-print("START ----------------- ")
-start_time = int(round(time.time() * 1000))
-results = []
-traverse_tree(node, test[0], results)
-closest = None
-for result in results:
-    dist = distance.euclidean(np.array(result[1].mean_vector), test[0])
-    # print('DISTANCE', dist, '->', result[2].mean_vector)
-    if closest is None or closest[0] > dist:
-        result[0] = dist
-        closest = result
-print(closest[0], closest[2].mean_vector)
-elapsed = int(round(time.time() * 1000)) - start_time
-print('Time', elapsed)
-print("STOP ------------------ ")
+if 'test' not in sys.argv:
+    pass
+else:
+    print('Testing', len(testing), 'data points')
+    correct = 0
+    done = 0
+    total_time = 0
+    for test in testing:
+        start_time = int(round(time.time() * 1000))
+        results = []
+        traverse_tree(node, test[0], results)
+        closest = None
+        for result in results:
+            dist = distance.euclidean(np.array(result[1].mean_vector), test[0])
+            # print('DISTANCE', dist, '->', result[2].mean_vector)
+            if closest is None or closest[0] > dist:
+                result[0] = dist
+                closest = result
 
-# for test in testing:
-    # print("START ----------------- ")
-    # start_time = int(round(time.time() * 1000))
-    # results = []
-    # traverse_tree(node, test[0], results)
-    # closest = None
-    # for result in results:
-    #     dist = distance.euclidean(np.array(result[1].mean_vector), test[0])
-    #     # print('DISTANCE', dist, '->', result[2].mean_vector)
-    #     if closest is None or closest[0] > dist:
-    #         result[0] = dist
-    #         closest = result
-    # print(closest[0], closest[2].mean_vector)
-    # elapsed = int(round(time.time() * 1000)) - start_time
-    # print('Time', elapsed)
-    # print("STOP ------------------ ")
-    # elapsed = int(round(time.time() * 1000)) - start_time
-    # test_i = test[1].index(1)
-    # pred_i = pred.index(max(pred))
-    # print('Actual ' + str(test_i) + ' Prediction ' + str(pred_i), 'in', elapsed, 'ms')
-    # print('Actual ' + str(test[1]) + ' Prediction ' + str(pred), 'in', elapsed, 'ms')
-    # if test_i == pred_i:
-    #     correct += 1
-    # print('Current Accuracy', correct / len(testing), '(', int((correct / len(testing)) * 100), '%)')
+        elapsed = int(round(time.time() * 1000)) - start_time
+        pred = closest[2].mean_vector
+        test_i = test[1].index(1)
+        pred_i = pred.index(max(pred)) if isinstance(pred, list) else pred.tolist().index(max(pred))
+        if test_i == pred_i:
+            correct += 1
+        done += 1
+        print('(', int((correct / done) * 100), '%)')
+        total_time += elapsed
 
-print('Total Accuracy', correct / len(testing), '(', int((correct / len(testing)) * 100), '%)')
+    print('Total Accuracy', correct / done, '(', int((correct / done) * 100), '%)')
+    print('Average Time', total_time / done)
