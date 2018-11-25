@@ -1,4 +1,5 @@
 import os
+import random
 
 from array import array
 import numpy as np
@@ -17,6 +18,7 @@ def load_mnist(num):
         for j in range(0, 784):
             tmp.append(file_bytes_as_ints[i + j])
         imgs.append(tmp)
+    random.shuffle(imgs)
     return imgs
 
 

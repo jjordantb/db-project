@@ -11,7 +11,7 @@ from scipy.spatial import distance
 # Parameters Start
 training_test_split = 0.95
 nodes = 50
-selectivity = 900
+selectivity = 850
 k = 3
 # Parameters End
 
@@ -116,7 +116,7 @@ else:
         if test_i == pred_i:
             correct += 1
         done += 1
-        print('(', int((correct / done) * 100), '%)')
+        print('Actual', test_i, 'Predicted', pred_i, '(', int((correct / done) * 100), '%)')
         total_time += elapsed
 
     print('Total Accuracy', correct / done, '(', int((correct / done) * 100), '%)')
