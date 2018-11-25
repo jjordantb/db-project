@@ -56,17 +56,6 @@ for i in range(0, 10):
         testing.append((x, store.y_test[j]))
     image_stores.append(store)
 
-# for i in range(0, 10):
-#     imgs = ImgUtil.load_mnist(i)
-#     vect = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-#     vect[i] = 1
-#     size = len(imgs)
-#     for i, img in enumerate(imgs):
-#         if i >= size * training_test_split:
-#             testing.append((img, vect))
-#         else:
-#             training.append((img, vect))
-
 
 def current_time_ms():
     return int(round(time.time() * 1000))
