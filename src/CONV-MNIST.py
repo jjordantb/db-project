@@ -1,24 +1,34 @@
 # Using a Simple Convolution network on MNIST
+import time
+import os
+import sys
 
 import keras
 import numpy as np
-import tensorflow as tf
 from keras import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense
 
 from ImageStore import ImageStore
 import ImgUtil
 
+from PIL import Image, ImageDraw, ImageOps
+import PIL
+from tkinter import *
+
 import random
 
-sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
+# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force cpu
 
 # Parameters Start
 training_test_split = 0.95
 batch_size = 32
 num_classes = 10
-epochs = 10
+epochs = 5
 # Parameters End
+
+
+def current_time_ms():
+    return int(round(time.time() * 1000))
 
 
 class MnistStore(ImageStore):
@@ -81,15 +91,59 @@ model.add(Dropout(0.5))
 model.add(Dense(num_classes, activation='softmax'))
 model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adadelta(), metrics=['accuracy'])
 
+print('Training...')
+start_train = current_time_ms()
 model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs)
+print('Training took', current_time_ms() - start_train)
 evaluation = model.evaluate(x_test, y_test, verbose=True)
 print('Testing, Accuracy=', evaluation[1], 'Loss=', evaluation[0])
 
-while True:
-    print('What MNIST image would you like to make inference on: ')
-    idx = input()
-    print('Grabbing random image ' + idx + ' from ImageStore')
-    results = model.predict(np.array([image_stores[int(idx)].fetch_random_image()]))
-    label = results[0].argmax(axis=0)
-    print('The predicted label was', label, 'Here is a random image that is also a', label)
-    ImgUtil.draw_image(image_stores[int(idx)].fetch_random_raw_image(), 28, 28)
+if 'demo' in sys.argv:
+    root = Tk()
+
+
+    def on_quit():
+        quit(0)
+
+
+    width = 128
+    height = 128
+    center = height // 2
+    white = (255, 255, 255)
+
+    root.protocol('WM_DELETE_WINDOW', on_quit)
+
+
+    def on_button():
+        im = ImageOps.invert(image1)
+        im.thumbnail((28, 28))
+        im.save('cov.png')
+        raw = []
+        for pixel in iter(im.getdata()):
+            raw.append(pixel[0])
+        results = model.predict(np.array([np.array([x / 255 for x in raw]).reshape(28, 28, 1)]))
+        label = results[0].argmax(axis=0)
+        print('The predicted label was', label, 'Here is a random image that is also a', label)
+        store_image = image_stores[int(label)].fetch_random_raw_image()
+        ImgUtil.draw_image(store_image, 28, 28)
+        cv.delete('all')
+        image1.putdata(np.zeros((128, 128), dtype='i,i,i'))
+
+
+    def paint(event):
+        x1, y1 = (event.x - 1), (event.y - 1)
+        x2, y2 = (event.x + 1), (event.y + 1)
+        cv.create_oval(x1, y1, x2, y2, fill="black", width=6)
+        draw.line([x1, y1, x2, y2], fill="black", width=6)
+
+
+    while True:
+        cv = Canvas(root, width=width, height=height, bg='white')
+        cv.pack()
+        image1 = PIL.Image.new("RGB", (width, height), white)
+        draw = ImageDraw.Draw(image1)
+        cv.pack(expand=YES, fill=BOTH)
+        cv.bind("<B1-Motion>", paint)
+        button = Button(text="query", command=on_button)
+        button.pack()
+        root.mainloop()

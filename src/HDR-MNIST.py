@@ -1,19 +1,28 @@
 import random
 
-import ImgUtil
+from PIL import Image, ImageDraw, ImageOps
+import PIL
+from tkinter import *
+
 from ImageStore import ImageStore
+import ImgUtil
 from Node import Node
 import time
 import sys
 import numpy as np
 from scipy.spatial import distance
 
+
 # Parameters Start
 training_test_split = 0.95
-nodes = 50
+clusters = 50
 selectivity = 850
 k = 3
 # Parameters End
+
+
+def current_time_ms():
+    return int(round(time.time() * 1000))
 
 
 class MnistStore(ImageStore):
@@ -57,14 +66,10 @@ for i in range(0, 10):
     image_stores.append(store)
 
 
-def current_time_ms():
-    return int(round(time.time() * 1000))
-
-
-def traverse_tree(n, x_in, terminals):
-    closest_cluster_pair = n.get_closest_cluster_pair(x_in, k)
-    if len(closest_cluster_pair) > 0:
-        for c in closest_cluster_pair:
+def traverse_tree(node_n, x_in, terminals):
+    closest_cluster_pairs = node_n.get_closest_cluster_pairs(x_in, k)
+    if len(closest_cluster_pairs) > 0:
+        for c in closest_cluster_pairs:
             if len(c[1].child_nodes) > 0:
                 for child in c[1].child_nodes:
                     traverse_tree(child, x_in, terminals)
@@ -74,33 +79,72 @@ def traverse_tree(n, x_in, terminals):
 
 start_training = current_time_ms()
 print('Training on', len(training), 'samples')
-node = Node(nodes, 10, 1)
+node = Node(clusters, 10, 1)
 node.build_tree(training, selectivity)
 end_training = current_time_ms()
 print('Training took', end_training - start_training, 'ms')
 
-if 'test' not in sys.argv:
-    while True:
-        print('What MNIST image would you like to make inference on: ')
-        idx = input()
-        print('Grabbing random image ' + idx + ' from ImageStore')
-        test = image_stores[int(idx)].fetch_random_raw_image()
-        start_time = int(round(time.time() * 1000))
+if 'demo' in sys.argv:
+    root = Tk()
+
+
+    def on_quit():
+        quit(0)
+
+
+    width = 128
+    height = 128
+    center = height // 2
+    white = (255, 255, 255)
+
+    root.protocol('WM_DELETE_WINDOW', on_quit)
+
+
+    def on_button():
+        im = ImageOps.invert(image1)
+        im.thumbnail((28, 28))
+        im.save('cov.png')
+        pixels = list(im.getdata())
+        width, height = im.size
+        pixels = [pixels[i * width:(i + 1) * width] for i in range(height)]
+        raw = []
+        for i in pixels:
+            for j in i:
+                raw.append(j[0])
         results = []
-        traverse_tree(node, test[0], results)
+        traverse_tree(node, raw, results)
         closest = None
         for result in results:
-            dist = distance.euclidean(np.array(result[1].mean_vector), test[0])
-            # print('DISTANCE', dist, '->', result[2].mean_vector)
+            dist = distance.euclidean(np.array(result[1].mean_vector), raw)
             if closest is None or closest[0] > dist:
                 result[0] = dist
                 closest = result
 
-        elapsed = int(round(time.time() * 1000)) - start_time
         pred = closest[2].mean_vector
         pred_i = pred.index(max(pred)) if isinstance(pred, list) else pred.tolist().index(max(pred))
         print('The predicted label was', pred_i, 'Here is a random image that is also a', pred_i)
-        ImgUtil.draw_image(image_stores[int(idx)].fetch_random_raw_image(), 28, 28)
+        ImgUtil.draw_image(image_stores[int(pred_i)].fetch_random_raw_image(), 28, 28)
+        cv.delete('all')
+
+
+    def paint(event):
+        x1, y1 = (event.x - 1), (event.y - 1)
+        x2, y2 = (event.x + 1), (event.y + 1)
+        cv.create_oval(x1, y1, x2, y2, fill="black", width=6)
+        draw.line([x1, y1, x2, y2], fill="black", width=6)
+
+
+    while True:
+        cv = Canvas(root, width=width, height=height, bg='white')
+        cv.pack()
+        image1 = PIL.Image.new("RGB", (width, height), white)
+        draw = ImageDraw.Draw(image1)
+        cv.pack(expand=YES, fill=BOTH)
+        cv.bind("<B1-Motion>", paint)
+        button = Button(text="query", command=on_button)
+        button.pack()
+        root.mainloop()
+
 else:
     print('Testing', len(testing), 'data points')
     correct = 0
@@ -113,7 +157,6 @@ else:
         closest = None
         for result in results:
             dist = distance.euclidean(np.array(result[1].mean_vector), test[0])
-            # print('DISTANCE', dist, '->', result[2].mean_vector)
             if closest is None or closest[0] > dist:
                 result[0] = dist
                 closest = result

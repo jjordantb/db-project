@@ -12,7 +12,7 @@ from XCluster import XCluster
 from YCluster import YCluster
 
 
-def compute_clusters(input_data, num_clusters, sensitivity):
+def compute_clusters(input_data, num_clusters, selectivity):
     y_clusters = [YCluster(input_data[0][1])]
     x_clusters = [XCluster(input_data[0][0], input_data[0][1])]
     p = 1
@@ -30,7 +30,7 @@ def compute_clusters(input_data, num_clusters, sensitivity):
                 closest_cluster = cluster
                 index = i
             i += 1
-        if p < num_clusters and dist >= sensitivity:
+        if p < num_clusters and dist >= selectivity:
             new_y_cluster = YCluster(y_vector_i)
             y_clusters.append(new_y_cluster)
             new_x_cluster = XCluster(x_vector_i, y_vector_i)
@@ -53,20 +53,18 @@ class Node:
         print('At Tree Depth', self.depth)
 
     # s_prime -> set of tuples (x, y)
-    def build_tree(self, s_prime, selectivity):
-        p = self.num_clusters
-
+    def build_tree(self, input_data, selectivity):
         # Compute the clusters
         print('Computing Clusters for', self)
-        clusters = compute_clusters(s_prime, p, selectivity)
+        clusters = compute_clusters(input_data, self.num_clusters, selectivity)
         self.y_clusters = clusters[1]
         self.x_clusters = clusters[0]
         print('Computed', len(self.x_clusters), 'Clusters')
 
         # Compute the covariance matricies
-        print('Computing Matrices for', self)
-        for i in range(0, len(self.y_clusters)):
-            self.x_clusters[i].compute_cov()
+        # print('Computing Matrices for', self)
+        # for i in range(0, len(self.y_clusters)):
+        #     self.x_clusters[i].compute_cov()
 
         if len(self.x_clusters) > 1:
             print('Finding Children for', self)
@@ -100,7 +98,7 @@ class Node:
             dists.append(-distance.euclidean(x, x_cluster.mean_vector))
         return dists
 
-    def get_closest_cluster_pair(self, x, k):
+    def get_closest_cluster_pairs(self, x, k):
         raw = self.compute_distances_to(x)
         distances = np.array(raw)
         # num = distances.size
