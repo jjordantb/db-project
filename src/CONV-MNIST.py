@@ -1,22 +1,14 @@
 # Using a Simple Convolution network on MNIST
 import time
-import os
-import sys
-
-import keras
-import numpy as np
-from keras import Sequential
-from keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense
-import tensorflow as tf
-
-from ImageStore import ImageStore
-import ImgUtil
-
-from PIL import Image, ImageDraw, ImageOps
-import PIL
 from tkinter import *
 
-import random
+import PIL
+import keras
+import numpy as np
+import tensorflow as tf
+from PIL import Image, ImageDraw, ImageOps
+from keras import Sequential
+from keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense
 
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force cpu
 

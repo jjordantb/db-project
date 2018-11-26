@@ -1,26 +1,21 @@
-import random
-
-import keras
-from PIL import Image, ImageDraw, ImageOps
-import PIL
+import time
 from tkinter import *
 
-from ImageStore import ImageStore
-import ImgUtil
-from Node import Node
-import time
-import sys
+import PIL
+import keras
 import numpy as np
-from scipy.spatial import distance
 import tensorflow as tf
+from PIL import Image, ImageDraw, ImageOps
+from scipy.spatial import distance
 
+from Node import Node
 
 # Parameters Start
 training_test_split = 0.95
-clusters = 75
-selectivity = 850
+clusters = 50
+selectivity = 1000
 num_classes = 10
-k = 3
+k = 2
 # Parameters End
 
 

@@ -1,12 +1,8 @@
+import sys
 import time
 
 import numpy as np
-import sys
-
-from numpy.linalg import LinAlgError
-from scipy.linalg import orth
 from scipy.spatial import distance
-from scipy import stats
 
 from XCluster import XCluster
 from YCluster import YCluster
@@ -61,11 +57,6 @@ class Node:
         self.x_clusters = clusters[0]
         print('Computed', len(self.x_clusters), 'Clusters')
 
-        # Compute the covariance matricies
-        # print('Computing Matrices for', self)
-        # for i in range(0, len(self.y_clusters)):
-        #     self.x_clusters[i].compute_cov()
-
         if len(self.x_clusters) > 1:
             print('Finding Children for', self)
             for i, x_cluster in enumerate(self.x_clusters):
@@ -79,17 +70,6 @@ class Node:
                     x_cluster.child_nodes.append(new_node)
                     print('Cluster data of', len(x_cluster.x_vectors))
                     new_node.build_tree(x_cluster.x_vectors, x_cluster.y_vectors, selectivity)
-
-    def get_x_centers(self):
-        vects = []
-        for x_cluster in self.x_clusters:
-            vects.append(x_cluster.mean_vector)
-        return vects
-
-    def coordinate_vector(self, cluster_index):
-        centers = np.array(self.get_x_centers()).transpose()
-        m = orth(centers)
-        return m.transpose() * self.x_clusters[cluster_index].mean_vector
 
     def compute_distances_to(self, x):
         dists = []
