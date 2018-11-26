@@ -9,13 +9,14 @@ import tensorflow as tf
 from PIL import Image, ImageDraw, ImageOps
 from keras import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense
+import matplotlib.pyplot as plt
 
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force cpu
 
 # Parameters Start
 batch_size = 256
 num_classes = 10
-epochs = 20
+epochs = 10
 # Parameters End
 
 
@@ -72,13 +73,15 @@ if 'demo' in sys.argv:
     def on_button():
         im = ImageOps.invert(image1)
         im.thumbnail((28, 28))
-        im.save('cov.png')
         raw = []
         for pixel in iter(im.getdata()):
             raw.append(pixel[0])
         results = model.predict(np.array([np.array([x / 255 for x in raw]).reshape(28, 28, 1)]))
         label = results[0].argmax(axis=0)
         print('The predicted label was', label, 'Here is a random image that is also a', label)
+        plt.title('Is this a ' + str(label))
+        plt.imshow(im, cmap='gray')
+        plt.show()
         cv.delete('all')
         image1.putdata(data.getdata())
 

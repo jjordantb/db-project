@@ -7,15 +7,15 @@ import numpy as np
 import tensorflow as tf
 from PIL import Image, ImageDraw, ImageOps
 from scipy.spatial import distance
+import matplotlib.pyplot as plt
 
 from Node import Node
 
 # Parameters Start
-training_test_split = 0.95
 clusters = 50
-selectivity = 1000
+selectivity = 850
 num_classes = 10
-k = 2
+k = 10
 # Parameters End
 
 
@@ -70,7 +70,6 @@ if 'demo' in sys.argv:
     def on_button():
         im = ImageOps.invert(image1)
         im.thumbnail((28, 28))
-        im.save('cov.png')
         pixels = list(im.getdata())
         width, height = im.size
         pixels = [pixels[i * width:(i + 1) * width] for i in range(height)]
@@ -90,6 +89,16 @@ if 'demo' in sys.argv:
         pred = closest[2].mean_vector
         pred_i = pred.index(max(pred)) if isinstance(pred, list) else pred.tolist().index(max(pred))
         print('The predicted label was', pred_i, 'Here is a random image that is also a', pred_i)
+        plt.subplot(3, 1, 1)
+        plt.title('Mean Vector of Terminal Node')
+        plt.imshow(closest[1].mean_vector.reshape((28, 28)), cmap='gray')
+        plt.subplot(3, 1, 2)
+        plt.title('XVector[0] of Terminal Node')
+        plt.imshow(closest[1].x_vectors[0].reshape((28, 28)), cmap='gray')
+        plt.subplot(3, 1, 3)
+        plt.title('Is this a ' + str(pred_i))
+        plt.imshow(im, cmap='gray')
+        plt.show()
         cv.delete('all')
         image1.putdata(data.getdata())
 
