@@ -7,6 +7,7 @@ import keras
 import numpy as np
 from keras import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense
+import tensorflow as tf
 
 from ImageStore import ImageStore
 import ImgUtil
@@ -20,10 +21,9 @@ import random
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force cpu
 
 # Parameters Start
-training_test_split = 0.95
-batch_size = 32
+batch_size = 256
 num_classes = 10
-epochs = 5
+epochs = 20
 # Parameters End
 
 
@@ -31,57 +31,20 @@ def current_time_ms():
     return int(round(time.time() * 1000))
 
 
-class MnistStore(ImageStore):
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+x_train = x_train.reshape(x_train.shape[0], 28, 28, 1)
+x_test = x_test.reshape(x_test.shape[0], 28, 28, 1)
+input_shape = (28, 28, 1)
+x_train = x_train.astype('float32')
+x_test = x_test.astype('float32')
+x_train /= 255
+x_test /= 255
+y_train = keras.utils.to_categorical(y_train, num_classes)
+y_test = keras.utils.to_categorical(y_test, num_classes)
 
-    def __init__(self, idx, split):
-        super().__init__(None)
-        self.images = ImgUtil.load_mnist(idx)
-        self.x_train = []
-        self.y_train = []
-        self.x_test = []
-        self.y_test = []
-        vect = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        vect[idx] = 1
-        size = len(self.images)
-        for i, img in enumerate(self.images):
-            if i >= size * split:
-                self.x_test.append(np.reshape(np.array([x / 255 for x in img]), (28, 28, 1)))  # normalize
-                self.y_test.append(np.array(vect))
-            else:
-                self.x_train.append(np.reshape(np.array([x / 255 for x in img]), (28, 28, 1)))  # normalize
-                self.y_train.append(np.array(vect))
-
-    def fetch_random_image(self):
-        rand_image = self.images[random.randrange(0, len(self.images))]
-        return np.reshape(np.array([x / 255 for x in rand_image]), (28, 28, 1))
-
-    def fetch_random_raw_image(self):
-        return self.images[random.randrange(0, len(self.images))]
-
-
-image_stores = []
-
-# Init our training data
-for i in range(0, 10):
-    image_stores.append(MnistStore(i, training_test_split))
-
-x_train = []
-y_train = []
-x_test = []
-y_test = []
-for store in image_stores:
-    x_train += store.x_train
-    y_train += store.y_train
-    x_test += store.x_test
-    y_test += store.y_test
-
-x_train = np.array(x_train)
-y_train = np.array(y_train)
-x_test = np.array(x_test)
-y_test = np.array(y_test)
 
 model = Sequential()
-model.add(Conv2D(64, kernel_size=(3, 3), activation='relu', input_shape=(28, 28, 1)))
+model.add(Conv2D(64, kernel_size=(3, 3), activation='relu', input_shape=input_shape))
 model.add(Conv2D(128, (3, 3), activation='relu'))
 model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Dropout(0.25))
@@ -101,7 +64,6 @@ print('Testing, Accuracy=', evaluation[1], 'Loss=', evaluation[0])
 if 'demo' in sys.argv:
     root = Tk()
 
-
     def on_quit():
         quit(0)
 
@@ -110,6 +72,7 @@ if 'demo' in sys.argv:
     height = 128
     center = height // 2
     white = (255, 255, 255)
+    data = PIL.Image.new("RGB", (width, height), white)
 
     root.protocol('WM_DELETE_WINDOW', on_quit)
 
@@ -124,10 +87,8 @@ if 'demo' in sys.argv:
         results = model.predict(np.array([np.array([x / 255 for x in raw]).reshape(28, 28, 1)]))
         label = results[0].argmax(axis=0)
         print('The predicted label was', label, 'Here is a random image that is also a', label)
-        store_image = image_stores[int(label)].fetch_random_raw_image()
-        ImgUtil.draw_image(store_image, 28, 28)
         cv.delete('all')
-        image1.putdata(np.zeros((128, 128), dtype='i,i,i'))
+        image1.putdata(data.getdata())
 
 
     def paint(event):

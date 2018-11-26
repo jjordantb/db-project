@@ -12,14 +12,14 @@ from XCluster import XCluster
 from YCluster import YCluster
 
 
-def compute_clusters(input_data, num_clusters, selectivity):
-    y_clusters = [YCluster(input_data[0][1])]
-    x_clusters = [XCluster(input_data[0][0], input_data[0][1])]
+def compute_clusters(x_train, y_train, num_clusters, selectivity):
+    y_clusters = [YCluster(y_train[0])]
+    x_clusters = [XCluster(x_train[0], y_train[0])]
     p = 1
-    for i in range(1, len(input_data)):
+    for i in range(1, len(x_train)):
         # Find the nearest y-cluster to vector i
-        y_vector_i = input_data[i][1]
-        x_vector_i = input_data[i][0]
+        y_vector_i = y_train[i]
+        x_vector_i = x_train[i]
         dist = sys.maxsize
         closest_cluster = None
         index = 0
@@ -53,10 +53,10 @@ class Node:
         print('At Tree Depth', self.depth)
 
     # s_prime -> set of tuples (x, y)
-    def build_tree(self, input_data, selectivity):
+    def build_tree(self, x_train, y_train, selectivity):
         # Compute the clusters
         print('Computing Clusters for', self)
-        clusters = compute_clusters(input_data, self.num_clusters, selectivity)
+        clusters = compute_clusters(x_train, y_train, self.num_clusters, selectivity)
         self.y_clusters = clusters[1]
         self.x_clusters = clusters[0]
         print('Computed', len(self.x_clusters), 'Clusters')
@@ -77,9 +77,8 @@ class Node:
                 if should_split:
                     new_node = Node(self.num_clusters, self.num_classes, self.depth + 1)
                     x_cluster.child_nodes.append(new_node)
-                    cluster_data = x_cluster.get_data()
-                    print('Cluster data of', len(cluster_data))
-                    new_node.build_tree(cluster_data, selectivity)
+                    print('Cluster data of', len(x_cluster.x_vectors))
+                    new_node.build_tree(x_cluster.x_vectors, x_cluster.y_vectors, selectivity)
 
     def get_x_centers(self):
         vects = []
