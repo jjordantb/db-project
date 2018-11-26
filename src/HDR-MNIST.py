@@ -15,7 +15,7 @@ from Node import Node
 clusters = 50
 selectivity = 850
 num_classes = 10
-k = 10
+k = 2
 # Parameters End
 
 

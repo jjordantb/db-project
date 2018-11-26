@@ -2,6 +2,7 @@ import sys
 import time
 
 import numpy as np
+import math
 from scipy.spatial import distance
 
 from XCluster import XCluster
@@ -81,7 +82,7 @@ class Node:
         raw = self.compute_distances_to(x)
         distances = np.array(raw)
         # num = distances.size
-        num = min(distances.size, k * self.depth)
+        num = min(distances.size, int(math.pow(k, self.depth)))
         mins = np.argpartition(distances, -num)[-num:]
         ret = []
         for m in mins:
